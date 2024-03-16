@@ -1,9 +1,17 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <windows.h>
+#include <math.h>
 
-int map[2][16][14];//[player][y][x]
-int map_sub[2][8][19];//[player][x][y]
+int puyo_size[2] = {12, 6};//y, x
+int tetris_size[2] = {20, 10}; 
+//合わせるか
+//ぷよぷよとテトリスわける？　なーるほど
+//原作 テトリス 20x10 ぷよぷよ 12x6
+//あわせるかな
+int map[2][20][10];//[player][y][x]
+int map_sub[2][8][19];//[player][y][x]
 
 int puyopuyo_block[2][2][2];//[1st 2nd] [2] 1 2選択 [2] x y 
 int puyopuyo_block_color[2][2][2];//[1st 2nd] now next選択 [2]  1 2　カラー選択？
@@ -21,6 +29,11 @@ int score[2];//スコア
 int currentBlock[2][4][4];//[player][y][x]
 
 int next_tetris_block_number[2] = {0,0};
+
+int before_key[8];
+
+char logo[999] ={"    * ### ##   ##  ###  ##  ##    ## ##   ### ##   ##  ###  ##  ##    ## ##   #### ##  ### ###  #### ##  ### ##     ####    ## ## *\n*  ##  ##  ##   ##  ##  ##   ##   ##   ##  ##  ##   ##  ##  ##   ##   ##  # ## ##   ##  ##  # ## ##   ##  ##     ##    ##   ## *\n*  ##  ##  ##   ##  ##  ##   ##   ##   ##  ##  ##   ##  ##  ##   ##   ##    ##      ##        ##      ##  ##     ##    #### *\n*  ##  ##  ##   ##   ## ##   ##   ##   ##  ##  ##   ##   ## ##   ##   ##    ##      ## ##     ##      ## ##      ##     ##### *\n*  ## ##   ##   ##    ##     ##   ##   ## ##   ##   ##    ##     ##   ##    ##      ##        ##      ## ##      ##        ### *\n*  ##      ##   ##    ##     ##   ##   ##      ##   ##    ##     ##   ##    ##      ##  ##    ##      ##  ##     ##    ##   ## *\n* ####      ## ##     ##      ## ##   ####      ## ##     ##      ## ##    ####    ### ###   ####    #### ##    ####    ## ## *\n"};
+BYTE keyboardState[256];
 
 struct Block
 {
@@ -68,6 +81,7 @@ struct Block
         {0, 0, 0, 0}};
 };
 
+
 void MakeMap()
 {
     /*
@@ -77,29 +91,40 @@ void MakeMap()
     1player   2player 
     */
     for(int num = 0; num<2; num++){
-        for (int y =0; y<16; y++){
-            for (int x = 0; x<14; x++){
-                if(y == 15){//
+        for (int y =0; y<20; y++){
+            for (int x = 0; x<16; x++){
+                if(x == 0||x == 15 ||y == 19){//
                     map[num][y][x] = 1;
                 }else{
                     map[num][y][x] = 0;
                     
                 }
             }
-            map[num][y][0] = 1;
-            map[num][y][6] = 1;
         }
         //サブマップの作成
-        for (int x = 0; x<8; x++){
-            for(int y = 0; y<19; y++){
-                if(x == 0 || x == 7 || y == 0 || y == 18){
-                    map_sub[num][x][y] = 1;
+        for (int y =0; y<8; y++){
+            for (int x = 0; x<16; x++){
+                if(y == 0 || y == 7 || x == 0|| x == 7 ||x == 8 || x == 15){
+                    map_sub[num][y][x] = 1;
                 }else{
-                    map_sub[num][x][y] = 0;
-                }
+                    map_sub[num][y][x] = 0;
             }
-            map_sub[num][x][9] = 1;
+            }
         }
+
+        // for(int y = 0; y < 20; y++){
+        //     for(int x = 0; x < 16; x++){
+        //         printf("map[%d][%d][%d]:%d\n",num,y,x,map[num][y][x]);
+        //     }
+        //     printf("\n");
+        // }
+
+        // for(int y = 0; y < 8; y++){
+        //     for(int x = 0; x < 16; x++){
+        //         printf("map_sub[%d][%d][%d]:%d\n",num,y,x,map_sub[num][y][x]);
+        //     }
+        //     printf("\n");
+        // }
     }
 }
 
@@ -159,28 +184,28 @@ void MakeBlock(int player)
     }
 }
 
-void Rotate_Block(int player, int mode){
+void Rotate_Block(int player, int modes){
     /*
     ブロックの回転
     */
     block_direction[player] = (block_direction[player] + 1) % 4;
-    int temp[4][4]; 
-    if(!mode){
-        for(int c = 0; c < 2; c++){
-            for(int y = 0; y < 4; y++){
-                for(int x = 0; x < 4; x++){
-                    if(!c){
-                        temp[y][x] = currentBlock[player][y][x];
-                    }
-                    else{
-                        currentBlock[player][y][x] = temp[3 - x][y];
-                    }
-                }
-            }
-        }
-    }else{
-        //puyopuyo pass;
-    }
+    //int temp[4][4]; 
+    //if(!mode){
+    //    for(int c = 0; c < 2; c++){
+    //        for(int y = 0; y < 4; y++){
+    //            for(int x = 0; x < 4; x++){
+    //                if(!c){
+    //                    temp[y][x] = currentBlock[player][y][x];
+    //                }
+    //                else{
+    //                    currentBlock[player][y][x] = temp[3 - x][y];
+    //                }
+    //            }
+    //        }
+    //    }
+    //}else{
+    //    //puyopuyo pass;
+    //}
 }
 //落ちるぷよがあるかどうか毎回判定してた気がする
 //そこ僕と違う処理方法だからそっちに合わせます。できるかはできるようするんです。
@@ -191,6 +216,100 @@ void PlaceBlock(int player,int mode, int GameMode,int put_x,int put_y){
    //配置方法要検討
 }
 
+int Len(int array[]){
+    int i;
+    for(i = 0; array[i]; i++){
+        if(!array[i]){
+            break;
+        }
+    }
+    return i;
+}
+
+int InArray(int element, int array[]){
+    for(int i = 0; array[i]; i++){
+        if(array[i] == element){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int CanDeleteBlock(int player){
+    if(!mode[player]){
+        for(int y = tetris_size[0] - 2; y >= 0; y--){
+            for(int x = 1; x < tetris_size[1] - 1; x++){
+                if(!map[player][y][x]){
+                    break;
+                }
+                if(x == tetris_size[1] - 2){
+                    return 1;
+                }
+            }
+        }
+    }
+    else{
+        int searched_block[180] = {0};
+        for(int y = 0; y < puyo_size[0] - 1; y++){
+            for(int x = 1; x < puyo_size[1] - 1; x++){
+                if(map[player][y][x] && !InArray(y * 100 + x, searched_block)){
+                    searched_block[Len(searched_block)] = y * 100 + x;
+                    int adjacent_block[3] = {0};
+                    adjacent_block[0] = y * 100 + x;
+                    for(int i = 0; i < 4 && adjacent_block[i]; i++){
+                        for(int j = 0; j < 4; j++){//
+                            if(
+                                adjacent_block[i] / 100 + sin(j * 90) > 0 
+                                && adjacent_block[i] / 100 + sin(j * 90) < puyo_size[0] - 1 
+                                && adjacent_block[i] % 100 + cos(j * 90) > 0 
+                                && adjacent_block[i] % 100 + cos(j * 90) < puyo_size[1] - 1 
+                                && map[player][adjacent_block[i] / 100][adjacent_block[i] % 100] == map[player][int(adjacent_block[i] / 100 + sin(j * 90))][int(adjacent_block[i] % 100 + cos(j * 90))]
+                                )
+                            {
+                                if(Len(adjacent_block) == 3){
+                                    return 1;
+                                }
+                                adjacent_block[Len(adjacent_block)] = adjacent_block[i] + static_cast<int>(sin(j * 90) * 100 + cos(j * 90));
+                                searched_block[Len(searched_block)] = adjacent_block[i] + static_cast<int>(sin(j * 90) * 100 + cos(j * 90));
+                            }
+                        }
+                    }//変数作っときましょう
+                }//マップの大きさ、後々変更しやすいよう変数にしとく？
+            }//意外とこれ調整がんばらんとバランス崩れる。今ぷよぷよのサイズ的にはいいけど、テトリスは狭いかも
+        }
+    }
+    return 0;
+}
+
+int CanBlockFall(int player){
+    if(!mode[player]){
+        for(int y = tetris_size[0] - 2; y >= 0; y--){
+            for(int x = 1; x < tetris_size[1] - 1; x++){
+                if(map[player][y][x]){
+                    break;
+                }
+                if(x == tetris_size[1] - 2){
+                    return 1;
+                }
+            }
+        }//僕も風呂行ってくるわ
+    }//huro mainの画面できたけどsubの画面に試行錯誤中。れっつごー
+    else{
+        for(int x = 1; x < 9; x++){
+            for(int y = 14; y > 0; y--){
+                if(!map[player][y][x]){
+                    for(y--; y >= 0; y--){
+                        if(map[player][y][x]){
+                            return 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 void FallBlock(int player){//多分できた
     /*
     ブロックを落下させる
@@ -198,13 +317,13 @@ void FallBlock(int player){//多分できた
     if(!mode[player])
     {
         for(int y = 14; y >= 0; y--){
-            for(int x = 1; x < 13; y++){
+            for(int x = 1; x < 9; y++){
                 if(map[player][y][x]){
                     break;
                 }
                 if(x == 12){
                     for(int i = y; i >= 0; y--){
-                        for(int j = 1; j < 13; j++){
+                        for(int j = 1; j < 9; j++){
                             if(y){
                                 map[player][i][j] = map[player][i -1][j];
                             }
@@ -218,7 +337,7 @@ void FallBlock(int player){//多分できた
         }
     }
     else{
-        for(int x = 1; x < 13; x++){
+        for(int x = 1; x < 9; x++){
             for(int y = 14; y > 0; y--){
                 if(!map[player][y][x]){
                     for(y--; y >= 0; y--){
@@ -243,14 +362,14 @@ void HinderBlock(int player,int power){//引数playerにはお邪魔ブロック
     */
     if(!mode[1 - player]){
         for(int y = power; y < 15; y++){
-            for(int x = 1; x < 13; x++){
+            for(int x = 1; x < 9; x++){
                 map[1 - player][y - power][x] = map[1 - player][y][x]; 
             }
         }
         for(int i = 0; i < power; i++){
             srand((unsigned int)time(NULL));
-            int x = rand() % 12 + 1;
-            for(int j = 1; j < 13; j++){
+            int x = rand() % 8 + 1;
+            for(int j = 1; j < 9; j++){
                 if(j != x){
                     map[1 - player][i][j] = 1;
                 }
@@ -263,34 +382,88 @@ void HinderBlock(int player,int power){//引数playerにはお邪魔ブロック
     }
     else{
         srand((unsigned int)time(NULL));
-        int start = rand() % 12 + 1;
-        for (int y = 0; power > 0 && y < 15; y++){
-            for(int x = )
-        }
+        int start = rand() % 8 + 1;
+        for (int y = 0; atack_power[player] > 0 && y < 15; y++){
+            for(int x = 0; atack_power[player] > 0 && x < 9; x++){
+                if(!map[1 - player][y][(x + start) % 8 + 1]){        
+                    map[1 - player][y][(x + start) % 8 + 1] = 1;
+                    atack_power[player]--;
+                }//がんばってーいきましょう．時間あったらなるべく進めとく
+            }
+        }//共闘とおいきましょう
     }
 }
 
-void DeleteBlock(int player, int mode, int put_x, int put_y){
+void DeleteBlock(int player){
     /*
     ブロックをマップから削除
     */
+   if(!mode[player]){
+    for(int y = 0; y < 15; y++){
+        for(int x = 1; x < 9; x++){
+            if(!map[player][y][x]){
+                break;
+            }
+            if(x == 8){
+                for(int i = 1; i < 9; i++){
+                    map[player][y][i] = 0;
+                }
+            }
+        }
+    }
+   }
+   else{
+        int searched_block[180] = {0};
+        for(int y = 0; y < 15; y++){
+            for(int x = 1; x < 9; x++){
+                if(map[player][y][x] > 1 && !InArray(y * 100 + x, searched_block)){
+                    searched_block[Len(searched_block)] = y * 100 + x;
+                    int adjacent_block[180] = {0};
+                    adjacent_block[0] = y * 100 + x;
+                    for(int i = 0; adjacent_block[i]; i++){
+                        for(int j = 0; j < 4; j++){
+                            if(
+                                !InArray(searched_block[i] + static_cast<int>(sin(j * 90) * 100 + cos(j * 90)), adjacent_block)
+                                && adjacent_block[i] / 100 + sin(j * 90) > 0 
+                                && adjacent_block[i] / 100 + sin(j * 90) < 15 
+                                && adjacent_block[i] % 100 + cos(j * 90) > 0 
+                                && adjacent_block[i] % 100 + cos(j * 90) < 9 
+                                && map[player][adjacent_block[i] / 100][adjacent_block[i] % 100] == map[player][int(adjacent_block[i] / 100 + sin(j * 90))][int(adjacent_block[i] % 100 + cos(j * 90))]
+                                )
+                            {
+                                adjacent_block[Len(adjacent_block)] = adjacent_block[i] + static_cast<int>(sin(j * 90) * 100 + cos(j * 90));
+                                searched_block[Len(searched_block)] = adjacent_block[i] + static_cast<int>(sin(j * 90) * 100 + cos(j * 90));
+                            }
+                        }
+                    }
+                    if(Len(adjacent_block) > 3){
+                        for(int i = 0; adjacent_block[i]; i++){
+                            map[player][adjacent_block[i] / 100][adjacent_block[i] % 100] = 0;
+                            for(int j = 0; j < 4; i++){
+                                if(map[player][int(adjacent_block[i] / 100 + sin(j * 90))][int(adjacent_block[i] % 100 + cos(j * 90))] == 1)
+                                {
+                                    map[player][int(adjacent_block[i] / 100 + sin(j * 90))][int(adjacent_block[i] % 100 + cos(j * 90))]--;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+   }
 }
 
-int CanPlaceBlock(int player,int mode, int put_x, int put_y){
+int CanPlaceBlock(int player,int modes, int put_x, int put_y){
     /*
     ブロックをマップに配置できるか
     */
-    if(!mode){
+    if(!modes){
         for(int y = 0; y<4; y++){
             for(int x = 0; x<4; x++){
                 int ys = put_y + y;
                 int xs = put_x + x;
                 int bls = currentBlock[player][y][x];
-                if(xs <= 13 && xs >= 0 &&
-                   ys < 0 || ys >= 16 || xs < 9 || xs >= 14 ||
-                   (bls >= 1 && bls <= 14)
-                   && (map[player][ys][xs] >= 1 && map[player][ys][xs] <= 14))
-                   
+                if((xs <= 13 && xs >= 0)&&(ys < 0 || ys >= 16 || xs < 9 || xs >= 14 || (bls >= 1 && bls <= 14)) && ((map[player][ys][xs] >= 1 && map[player][ys][xs] <= 14)))
                    {
                         return 0; 
                    }
@@ -300,7 +473,9 @@ int CanPlaceBlock(int player,int mode, int put_x, int put_y){
         }
    }else{
         //puyopuyo pass;
+
    }
+    return 1;
 }
 
 void CheckArrange(){
@@ -310,7 +485,7 @@ void CheckArrange(){
     */
 }
 
-void MapShow(int mode){
+void MapShow(int modes){
     /*
     マップの表示
     mode 1・・・シングル 
@@ -329,12 +504,19 @@ void MapShow(int mode){
     壁:白1
     next:グレー 8
     */
-    int map_YX[2][2] = {{16,14},{8,19}};//main sub画面切り替え sub mainの順
-    for(int map_change = 0; map_change <2; map_change++){//main sub画面切り替え
+    int map_YX[2][2] = {{20,16},{8,16}};//main sub画面切り替え sub mainの順
+    for(int map_change = 1; map_change >= 0; map_change--){//main sub画面切り替え
+        puts("");
         for(int y = 0; y < map_YX[map_change][0]; y++){//y
             for(int x = 0; x < map_YX[map_change][1]; x++){//x
-                for(int st = 0; st < mode; st++){//player
-                    int block_number = map[st][y][x];
+                for(int st = 0; st < modes; st++){//player
+                    int block_number;
+                    if(map_change == 1)
+                    {
+                        block_number = map_sub[st][y][x];
+                    }else{
+                        block_number = map[st][y][x];
+                    }
                     if(block_number >= 10){
                         block_number -= 10;
                     }
@@ -378,7 +560,7 @@ void MapShow(int mode){
             }
             puts("");
         }
-        printf("\n\n");
+        // printf("\n\n");
     }
 }
 
@@ -402,6 +584,44 @@ void GameOver(){
 
 int main(){
     MakeMap();
+    printf("%s",logo);
     printf("hello world\n");
-    return 0;
+    while (1)
+    {
+        //キーボード入力サンプル
+        if (GetAsyncKeyState('A') & 0x8000) {
+            if(!before_key[0]){
+                printf("a push\n");
+            }
+            before_key[0] = 1;
+        }else{
+            before_key[0] = 0;
+        }
+        if (GetAsyncKeyState('D') & 0x8000) {
+            if(!before_key[1]){
+                printf("d push\n");
+            }
+            before_key[1] = 1;
+        }else{
+            before_key[1] = 0;
+        }
+        if (GetAsyncKeyState('W') & 0x8000) {
+            if(!before_key[2]){
+                printf("w push\n");
+            }
+            before_key[2] = 1;
+        }else{
+            before_key[2] = 0;
+        }
+        if (GetAsyncKeyState('S') & 0x8000) {
+            if(!before_key[3]){
+                printf("s push\n");
+            }
+            before_key[3] = 1;
+        }else{
+            before_key[3] = 0;
+        }
+        MapShow(1);
+    }
+    
 }
