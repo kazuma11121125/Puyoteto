@@ -34,21 +34,21 @@ void MakeMap()
             }
             }
         }
-
-        // for(int y = 0; y < 20; y++){
-        //     for(int x = 0; x < 16; x++){
-        //         printf("map[%d][%d][%d]:%d\n",num,y,x,map[num][y][x]);
-        //     }
-        //     printf("\n");
-        // }
-
-        // for(int y = 0; y < 8; y++){
-        //     for(int x = 0; x < 16; x++){
-        //         printf("map_sub[%d][%d][%d]:%d\n",num,y,x,map_sub[num][y][x]);
-        //     }
-        //     printf("\n");
-        // }
     }
+    // for(int num = 0; num<2; num++){
+    //     for(int y = 0; y < 8; y++){
+    //         for(int x = 0; x < 16; x++){
+    //             printf("%d ",map_sub[num][y][x]);
+    //         }
+    //         printf("\n");
+    //     }
+    //     for(int y = 0; y < 20; y++){
+    //         for(int x = 0; x < 16; x++){
+    //             printf("%d ",map[num][y][x]);
+    //         }
+    //         printf("\n");
+    //     }
+    // }
 }
 
 void MapShow(int modes){
@@ -72,14 +72,11 @@ void MapShow(int modes){
     */
     int map_YX[2][2] = {{20,16},{8,16}};//main sub画面切り替え sub mainの順
     for(int map_change = 1; map_change >= 0; map_change--){//main sub画面切り替え
-        // printf("map_change:%d\n",map_change);
         puts("");
         for(int y = 0; y < map_YX[map_change][0]; y++){//y
-            // printf("y:%d\n",y);
-            for(int x = 0; x < map_YX[map_change][1]; x++){//x
-                // printf("x:%d",x);
-                for(int st = 0; st < modes; st++){//player
-                    // printf("st:%d\n",st);
+            for(int st = 0; st < modes; st++){//player
+                printf("  ");
+                for(int x = 0; x < map_YX[map_change][1]; x++){//x
                     int block_number;
                     if(map_change == 1)
                     {
@@ -87,10 +84,10 @@ void MapShow(int modes){
                     }else{
                         block_number = map[st][y][x];
                     }
-                    // printf("block_number:%d\n",block_number);
                     if(block_number >= 10){
                         block_number -= 10;
                     }
+                    // printf("%d ",block_number);
                     if (block_number == 1)
                     {
                         printf("\x1b[0m□ \x1b[0m");
@@ -131,13 +128,13 @@ void MapShow(int modes){
             }
             puts("");
         }
-        // printf("\n\n");
+        printf("\n\n");
     }
 }
 
 int main()
 {
     MakeMap();
-    MapShow(1);
+    MapShow(2);
     return 0;
 }
