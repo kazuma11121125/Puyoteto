@@ -4,13 +4,15 @@
 #include <windows.h>
 #include <math.h>
 
+int fps = 20;
+
 int puyo_size[2] = {12, 6};//y, x
 int tetris_size[2] = {20, 10}; 
 //合わせるか
 //ぷよぷよとテトリスわける？　なーるほど
 //原作 テトリス 20x10 ぷよぷよ 12x6
 //あわせるかな
-int map[2][20][10];//[player][y][x]
+int map[2][20][16];//[player][y][x]
 int map_sub[2][8][19];//[player][y][x]
 
 int puyopuyo_block[2][2][2];//[1st 2nd] [2] 1 2選択 [2] x y 
@@ -25,13 +27,18 @@ int block_direction[2];//回転回数
 int wait_time[2] = {0};
 int atack_power[2] = {0};
 
-int score[2];//スコア 
+int fall_timer[2] = {800,800};
+int control_timer[2] = {0};
+
+int score[2] = {0};//スコア 
 
 int currentBlock[2][4][4];//[player][y][x]
 
 int next_tetris_block_number[2] = {0,0};
 
-int before_key[8];
+int before_key[12];
+
+int players = 1;
 
 char logo[999] ={"    * ### ##   ##  ###  ##  ##    ## ##   ### ##   ##  ###  ##  ##    ## ##   #### ##  ### ###  #### ##  ### ##     ####    ## ## *\n*  ##  ##  ##   ##  ##  ##   ##   ##   ##  ##  ##   ##  ##  ##   ##   ##  # ## ##   ##  ##  # ## ##   ##  ##     ##    ##   ## *\n*  ##  ##  ##   ##  ##  ##   ##   ##   ##  ##  ##   ##  ##  ##   ##   ##    ##      ##        ##      ##  ##     ##    #### *\n*  ##  ##  ##   ##   ## ##   ##   ##   ##  ##  ##   ##   ## ##   ##   ##    ##      ## ##     ##      ## ##      ##     ##### *\n*  ## ##   ##   ##    ##     ##   ##   ## ##   ##   ##    ##     ##   ##    ##      ##        ##      ## ##      ##        ### *\n*  ##      ##   ##    ##     ##   ##   ##      ##   ##    ##     ##   ##    ##      ##  ##    ##      ##  ##     ##    ##   ## *\n* ####      ## ##     ##      ## ##   ####      ## ##     ##      ## ##    ####    ### ###   ####    #### ##    ####    ## ## *\n"};
 BYTE keyboardState[256];
@@ -190,7 +197,7 @@ void Rotate_Block(int player, int modes){
     ブロックの回転
     */
     int temp[4][4]; 
-    if(!mode){
+    if(!modes){
         for(int c = 0; c < 2; c++){
             for(int y = 0; y < 4; y++){
                 for(int x = 0; x < 4; x++){
@@ -217,13 +224,38 @@ void Rotate_Block(int player, int modes){
         //puyopuyo pass;
     }
 }
+
+void HoldBlock(int player){
+    if(!mode[player]){
+
+    }
+    else{
+        current_blopuyo[player] += hold_blopuyo[player];
+        hold_blopuyo[player] = current_blopuyo[player] - hold_blopuyo[player];
+        current_blopuyo[player] -= hold_blopuyo[player];
+    }
+}
 //落ちるぷよがあるかどうか毎回判定してた気がする
 //そこ僕と違う処理方法だからそっちに合わせます。できるかはできるようするんです。
-void PlaceBlock(int player,int mode, int GameMode,int put_x,int put_y){
+void PlaceBlock(int player,int put_x,int put_y){
     /*
     ブロックをマップに配置
     */
-   //配置方法要検討
+    //配置方法要検討
+    if (!mode[player]){
+        for(int y = 0; y < 4; y++){
+            for(int x = 0; x < 4; x++){
+                if(currentBlock[player][y][x]){
+                    map[player][put_y + y][put_x + x] = currentBlock[player][y][x];
+                }
+            }
+        }
+    }
+    else{
+        map[player][put_y][put_x] = current_blopuyo[player] / 10;
+        map[player][put_y + int(sin(block_direction[player] * 90))][put_x + int(sin(block_direction[player] * 90))] = current_blopuyo[player] % 10;
+        current_blopuyo[player] = 0;
+    }
 }
 
 int Len(int array[]){
@@ -480,6 +512,7 @@ int CanPlaceBlock(int player,int modes, int put_x, int put_y){
                    //回転するときの判定はバグの可能性大。引用元がバグあり。
                    //if文の魔人さん　出番です
             }//まあ一旦作ってみるわ
+
         }//if(CanPlaceBlock(player,mode,put_x,put_y)){PlaceBlock(player,mode,GameMode,put_x,put_y);}　こんな感じで使えるはず
    }else{
         //puyopuyo pass;
@@ -497,11 +530,11 @@ void CheckArrange(){
     */
 }
 
-void MapShow(int modes){
+void MapShow(int player){
     /*
     マップの表示
-    modes 1・・・シングル 
-    modes 2・・・対戦
+    player 1・・・シングル 
+    player 2・・・対戦
     */
 
     /*
@@ -516,11 +549,12 @@ void MapShow(int modes){
     壁:白1
     next:グレー 8
     */
+    system("cls");
     int map_YX[2][2] = {{20,16},{8,16}};//main sub画面切り替え sub mainの順
     for(int map_change = 1; map_change >= 0; map_change--){//main sub画面切り替え
         puts("");
         for(int y = 0; y < map_YX[map_change][0]; y++){//y
-            for(int st = 0; st < modes; st++){//player
+            for(int st = 0; st < player; st++){//player
                 printf("  ");
                 for(int x = 0; x < map_YX[map_change][1]; x++){//x
                     int block_number;
@@ -530,9 +564,6 @@ void MapShow(int modes){
                     }else{
                         block_number = map[st][y][x];
                     }
-                    if(block_number >= 10){
-                        block_number -= 10;
-                    }
                     // printf("%d ",block_number);
                     if (block_number == 1)
                     {
@@ -540,15 +571,30 @@ void MapShow(int modes){
                     }
                     else if (block_number == 2)
                     {
-                        printf("\x1b[31m■ \x1b[0m");
+                        if(!mode[st]){
+                            printf("\x1b[31m■ \x1b[0m");
+                        }
+                        else{
+                            printf("\x1b[31m● \x1b[0m");
+                        }
                     }
                     else if (block_number == 3)
                     {
-                        printf("\x1b[32m■ \x1b[0m");
+                        if(!mode[st]){
+                            printf("\x1b[32m■ \x1b[0m");
+                        }
+                        else{
+                            printf("\x1b[32m● \x1b[0m");
+                        }
                     }
                     else if (block_number == 4)
                     {
-                        printf("\x1b[33m■ \x1b[0m");
+                        if(!mode[st]){
+                            printf("\x1b[33m■ \x1b[0m");
+                        }
+                        else{
+                            printf("\x1b[33m● \x1b[0m");
+                        }
                     }
                     else if (block_number == 5)
                     {
@@ -582,7 +628,7 @@ void GameOver(){
     /*
     ゲームオーバー
     */
-   system("clear");
+    system("cls");
     if(score[0] > score[1]){
         printf("player1 gameover\n");
         printf("Win player is 1\n");
@@ -601,7 +647,6 @@ void GemoModeSelect(){
     ゲームモード選択
     */
     printf("1:シングルプレイ\n2:対戦プレイ\n数字で入力してください\n");
-    int players;
     scanf("%d",&players);
     if (players == 1){
         printf("1:シングルモード\nゲームモードを選択してください\n 1:テトリス 2:ぷよぷよ\n");
@@ -628,41 +673,169 @@ int main(){
     GemoModeSelect();
     while (1)
     {
-        //キーボード入力サンプル
-        if (GetAsyncKeyState('A') & 0x8000) {
-            if(!before_key[0]){
-                printf("a push\n");
+
+        //control
+        if(control_timer[0] <= 0){
+            if(GetAsyncKeyState('A') & 0x8000 && !before_key[0]){
+                before_key[0] = 1;
+                if(CanPlaceBlock(0, mode[0], current_position[0][1] - 1, current_position[0][0])){
+                    current_position[0][1]--;
+                    control_timer[0] = 100;
+                }
+            else if(GetAsyncKeyState('D') & 0x8000 && !before_key[1]){
+                before_key[1] = 1;
+                if(CanPlaceBlock(0, mode[0], current_position[0][1] + 1, current_position[0][0])){
+                    current_position[0][1]++;
+                    control_timer[0] = 100;
+                }
             }
-            before_key[0] = 1;
-        }else{
-            before_key[0] = 0;
+            else if(GetAsyncKeyState('W') & 0x8000 && !before_key[2]){
+                before_key[2] = 1;
+                Rotate_Block(0, mode[0]);
+                control_timer[0] = 100;
+            }
+            else if(GetAsyncKeyState('S') & 0x8000 && !before_key[3]){
+                before_key[3] = 1;
+                if(CanPlaceBlock(0, mode[0], current_position[0][1] + 1, current_position[0][0])){
+                    current_position[0][0]++;
+                    control_timer[0] = 100;
+                }
+                else{
+                    PlaceBlock(0, current_position[0][1], current_position[0][0]);
+                }
+            }
+            else if(GetAsyncKeyState('Q') & 0x8000 && !before_key[4]){
+                before_key[4] = 1;
+                HoldBlock(0);
+                control_timer[0] = 100;
+            }
+
+
+            if(!(GetAsyncKeyState('A') & 0x8000) && before_key[0]){
+                before_key[0] = 0;
+            }
+
+            if(!(GetAsyncKeyState('D') & 0x8000) && before_key[1]){
+                before_key[1] = 0;
+            }
+
+            if(!(GetAsyncKeyState('W') & 0x8000) && before_key[2]){
+                before_key[2] = 0;
+            }
+
+            if(!(GetAsyncKeyState('S') & 0x8000) && before_key[3]){
+                before_key[3] = 0;
+            }
+
+            if(!(GetAsyncKeyState('Q') & 0x8000) && before_key[4]){
+                before_key[4] = 0;
+            }
+        
         }
-        if (GetAsyncKeyState('D') & 0x8000) {
-            if(!before_key[1]){
-                printf("d push\n");
+        if(players > 1 && control_timer[1] <= 0){
+            if(GetAsyncKeyState('J') & 0x8000 && !before_key[6]){
+                before_key[6] = 1;
+                if(CanPlaceBlock(1, mode[1], current_position[1][1] - 1, current_position[1][0])){
+                    current_position[1][1]--;
+                    control_timer[1] = 100;
+                }
             }
-            before_key[1] = 1;
-        }else{
-            before_key[1] = 0;
-        }
-        if (GetAsyncKeyState('W') & 0x8000) {
-            if(!before_key[2]){
-                printf("w push\n");
+            else if(GetAsyncKeyState('L') & 0x8000 && !before_key[7]){
+                before_key[7] = 1;
+                if(CanPlaceBlock(1, mode[1], current_position[1][1] + 1, current_position[1][0])){
+                    current_position[1][1]++;
+                    control_timer[1] = 100;
+                }
             }
-            before_key[2] = 1;
-        }else{
-            before_key[2] = 0;
-        }
-        if (GetAsyncKeyState('S') & 0x8000) {
-            if(!before_key[3]){
-                printf("s push\n");
+            else if(GetAsyncKeyState('I') & 0x8000 && !before_key[8]){
+                before_key[8] = 1;
+                Rotate_Block(1, mode[1]);
+                control_timer[1] = 100;
             }
-            before_key[3] = 1;
-        }else{
-            before_key[3] = 0;
+            else if(GetAsyncKeyState('K') & 0x8000 && !before_key[9]){
+                before_key[9] = 1;
+                if(CanPlaceBlock(1, mode[1], current_position[1][1] + 1, current_position[1][0])){
+                    current_position[1][0]++;
+                    control_timer[1] = 100;
+                }
+                else{
+                    PlaceBlock(1, current_position[1][1], current_position[1][0]);
+                }
+            }
+            else if(GetAsyncKeyState('U') & 0x8000 && !before_key[10]){
+                before_key[10] = 1;
+                HoldBlock(1);
+                control_timer[1] = 100;
+            }
+
+            if(!(GetAsyncKeyState('J') & 0x8000) && before_key[6]){
+                before_key[6] = 0;
+            }
+
+            if(!(GetAsyncKeyState('L') & 0x8000) && before_key[7]){
+                before_key[7] = 0;
+            }
+
+            if(!(GetAsyncKeyState('I') & 0x8000) && before_key[8]){
+                before_key[8] = 0;
+            }
+
+            if(!(GetAsyncKeyState('K') & 0x8000) && before_key[9]){
+                before_key[9] = 0;
+            }
+
+            if(!(GetAsyncKeyState('U') & 0x8000) && before_key[10]){
+                before_key[10] = 0;
+            }
+
         }
 
-        MapShow(1);
-    }
+        //delete and fall block
+        for(int player = 0; player < players; player++){
+            if(control_timer[player]){
+                control_timer[player] -= 1000 / fps;
+            }
+            if(!control_timer[player]){
+                if(!mode[player]){
+                    if(CanDeleteBlock(player)){
+                        DeleteBlock(player);
+                        control_timer[player] = 500;
+                    }
+                    else if(CanBlockFall(player)){
+                        FallBlock(player);
+                        control_timer[player] = 300;
+                    }
+                }
+                else{
+                    if(CanBlockFall(player)){
+                        FallBlock(player);
+                        control_timer[player] = 250;
+                    }
+                    else if(CanDeleteBlock(player)){
+                        DeleteBlock(player);
+                        control_timer[player] = 250;
+                    }
+                }
+            }
+            if(!CanBlockFall(player) && !CanDeleteBlock(player)){
+                if(fall_timer[player]){
+                    fall_timer[player] -= 1000 / fps;
+                }
+                else{
+                    current_position[player][0]++;
+                    if(!CanPlaceBlock(player,mode[player],current_position[player][0], current_position[player][1])){
+                        PlaceBlock(player, current_position[player][0] - 1, current_position[player][1]);
+                        current_position[player][0] = 0;
+                        current_position[player][1] = (mode[player] ? puyo_size[1] : tetris_size[1]) / 2 - 1;
+                        MakeBlock(player);
+                    }
+                    fall_timer[player] = 800;
+                }
+            }
+        }
+        MapShow(2);
+        Sleep(static_cast<DWORD>(1000 / fps));
+        }
     
+    }
 }
