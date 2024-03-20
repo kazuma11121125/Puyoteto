@@ -10,7 +10,7 @@
 #include <sys/time.h>
 
 /*
-作成期間 1週間 kazuma1112とsomeyashの共同制作作品。
+作成期間 1週間 kazuma1112とsomeyeahの共同制作作品。
 
 Ubuntu環境のみ動作確認(windows未確認)
 
