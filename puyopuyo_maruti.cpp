@@ -155,16 +155,13 @@ void block_make(int player)
 
 void block_kaitenn(int player)
 {
-    printf("1");
     int y1, x1, y2, x2;
-    printf("2");
     if (player == 1)
     {
         y1 = block1_y;
         x1 = block1_x;
         y2 = block2_y;
         x2 = block2_x;
-        printf("3");
     }
     else
     {
@@ -172,7 +169,6 @@ void block_kaitenn(int player)
         x1 = block3_x;
         y2 = block4_y;
         x2 = block4_x;
-        printf("4");
     }
     
     if (y1 == y2 && x1 + 1 == x2 && tetris_drawings[y1 + 1][x1] > 0 && !tetris_drawings[y1 - 1][x1])
@@ -183,7 +179,6 @@ void block_kaitenn(int player)
         int j = y1 - y2;
         x2 = x1 + j;
         y2 = y1 + i;
-        printf("5");
     }
     else if (y1 == y2 && x1 - 1 == x2 && tetris_drawings[y1 - 1][x1] && !tetris_drawings[y1 + 1][x1])
     {
@@ -193,7 +188,6 @@ void block_kaitenn(int player)
         int j = y1 - y2;
         x2 = x1 + j;
         y2 = y1 + i;
-        printf("6");
     }
     else if (y1 - 1 == y2 && x1 == x2 && tetris_drawings[y1][x1 + 1] && !tetris_drawings[y1][x1 - 1])
     {
@@ -203,7 +197,6 @@ void block_kaitenn(int player)
         int j = y1 - y2;
         x2 = x1 + j;
         y2 = y1 + i;
-        printf("7");
     }
     else if (y1 + 1 == y2 && x1 == x2 && tetris_drawings[y1][x1 - 1] && !tetris_drawings[y1][x1 + 1])
     {
@@ -213,7 +206,6 @@ void block_kaitenn(int player)
         int j = y1 - y2;
         x2 = x1 + j;
         y2 = y1 + i;
-        printf("8");
     }
     else if ((y1 == y2 && x1 + 1 == x2 && !tetris_drawings[y1 + 1][x1]) || (y1 == y2 && x1 - 1 == x2 && !tetris_drawings[y1 - 1][x1]) || (y1 - 1 == y2 && x1 == x2 && !tetris_drawings[y1][x1 + 1]) || (y1 + 1 == y2 && x1 == x2 && !tetris_drawings[y1][x1 - 1]))
     {
@@ -221,7 +213,6 @@ void block_kaitenn(int player)
         int j = y1 - y2;
         x2 = x1 + j;
         y2 = y1 + i;
-        printf("9");
         //block2_x = block1_y - block2_y;
         //block2_y = block2_x - block1_x;
     }
@@ -231,7 +222,6 @@ void block_kaitenn(int player)
         block1_x = x1;
         block2_y = y2;
         block2_x = x2;
-        printf("10");
     }
     else
     {
@@ -240,8 +230,6 @@ void block_kaitenn(int player)
         block4_y = y2;
         block4_x = x2;
     }
-    printf("11");
-    printf("x1=%dy1=%dx2=%dy2%d", x1, y1, x2, y2);
     // if (block2_y == 31)
     //{
     //     block1_y--;
